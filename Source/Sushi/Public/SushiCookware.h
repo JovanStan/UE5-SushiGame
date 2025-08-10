@@ -11,9 +11,7 @@ UENUM(BlueprintType)
 enum class ECookwareState : uint8
 {
 	Idle,
-	Cutting,
 	CuttingDone,
-	Rolling,
 	RollingDone
 };
 

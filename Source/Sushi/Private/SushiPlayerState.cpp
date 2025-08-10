@@ -17,6 +17,7 @@ void ASushiPlayerState::GetLifetimeReplicatedProps(TArray<class FLifetimePropert
 void ASushiPlayerState::OnRep_PlayerScore()
 {
 	Super::OnRep_Score();
+	OnScoreChanged.Broadcast(PlayerScore);
 }
 
 void ASushiPlayerState::AddScore(int32 ScoreToAdd)
@@ -24,6 +25,7 @@ void ASushiPlayerState::AddScore(int32 ScoreToAdd)
 	if (HasAuthority())
 	{
 		PlayerScore += ScoreToAdd;
+		OnScoreChanged.Broadcast(PlayerScore);
 	}
 }
 

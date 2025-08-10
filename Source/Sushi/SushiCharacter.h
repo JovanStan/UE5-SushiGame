@@ -45,11 +45,14 @@ protected:
 	TObjectPtr<UInputAction> MouseLookAction;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input")
 	TObjectPtr<UInputAction> InteractAction;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input")
+	TObjectPtr<UInputAction> DropAction;
 
 public:
 	ASushiCharacter();
 	
 	void Interact();
+	void Drop();
 	
 	void StartCutting(ASushiCookware* Cookware);
 	void StartRolling(ASushiCookware* Cookware);
@@ -59,6 +62,10 @@ public:
 	void FinishRolling();
 
 	void ClearHeldSushi();
+
+	UFUNCTION()
+	void HandleScoreChanged(int32 NewScore);
+	void SetIgnoreLookInputAndMovementMode(bool bIsIgnoreLookInput, EMovementMode MovementModeToSet);
 
 protected:
 	virtual void BeginPlay() override;
@@ -74,7 +81,7 @@ protected:
 	TSubclassOf<AActor> SushiItemClass;
 	UPROPERTY()
 	TObjectPtr<AActor> SushiActor;
-	
+	bool bSushiInHand;
 	FName HeldSushiName;
 	
 

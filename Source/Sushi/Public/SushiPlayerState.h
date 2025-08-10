@@ -5,6 +5,7 @@
 #include "GameFramework/PlayerState.h"
 #include "SushiPlayerState.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnScoreChangedSignature, int32, NewScore);
 
 UCLASS()
 class SUSHI_API ASushiPlayerState : public APlayerState
@@ -22,4 +23,7 @@ public:
 	void OnRep_PlayerScore();
 
 	void AddScore(int32 ScoreToAdd);
+
+	UPROPERTY(BlueprintAssignable, Category="Score")
+	FOnScoreChangedSignature OnScoreChanged;
 };

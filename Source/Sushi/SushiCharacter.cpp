@@ -1,6 +1,5 @@
 
 #include "SushiCharacter.h"
-#include "Engine/LocalPlayer.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -10,9 +9,11 @@
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
 #include "SushiCookware.h"
+#include "SushiPlayerState.h"
 #include "SushiTable.h"
 #include "Blueprint/UserWidget.h"
 #include "Engine/OverlapResult.h"
+#include "Kismet/GameplayStatics.h"
 #include "UI/SushiUserWidget.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
@@ -48,6 +49,7 @@ ASushiCharacter::ASushiCharacter()
 	PrimaryActorTick.bCanEverTick = false;
 	bReplicates = true;
 	HeldSushiName = "";
+	bSushiInHand = false;
 }
 
 void ASushiCharacter::BeginPlay()
@@ -59,7 +61,20 @@ void ASushiCharacter::BeginPlay()
 		if (UserWidget)
 		{
 			UserWidget->AddToViewport();
+			if (ASushiPlayerState* PS = GetPlayerState<ASushiPlayerState>())
+			{
+				UserWidget->SetScoreText(PS->PlayerScore);
+				PS->OnScoreChanged.AddDynamic(this, &ASushiCharacter::HandleScoreChanged);
+			}
 		}
+	}
+}
+
+void ASushiCharacter::HandleScoreChanged(int32 NewScore)
+{
+	if (UserWidget)
+	{
+		UserWidget->SetScoreText(NewScore);
 	}
 }
 
@@ -68,6 +83,7 @@ void ASushiCharacter::StartCutting(ASushiCookware* Cookware)
 {
 	bIsBusy = true;
 	CurrentCookware = Cookware;
+	SetIgnoreLookInputAndMovementMode(true, MOVE_None);
 	
 	if (CutFishMontage)
 		PlayAnimMontage(CutFishMontage);
@@ -78,6 +94,7 @@ void ASushiCharacter::StartCutting(ASushiCookware* Cookware)
 void ASushiCharacter::FinishCutting()
 {
 	bIsBusy = false;
+	SetIgnoreLookInputAndMovementMode(false, MOVE_Walking);
 
 	if (CurrentCookware)
 		CurrentCookware->CookwareState = ECookwareState::CuttingDone;
@@ -89,6 +106,7 @@ void ASushiCharacter::StartRolling(ASushiCookware* Cookware)
 {
 	bIsBusy = true;
 	CurrentCookware = Cookware;
+	SetIgnoreLookInputAndMovementMode(true, MOVE_None);
 
 	if (RollSushiMontage)
 		PlayAnimMontage(RollSushiMontage);
@@ -99,6 +117,7 @@ void ASushiCharacter::StartRolling(ASushiCookware* Cookware)
 void ASushiCharacter::FinishRolling()
 {
 	bIsBusy = false;
+	SetIgnoreLookInputAndMovementMode(false, MOVE_Walking);
 
 	if (CurrentCookware)
 	{
@@ -110,6 +129,15 @@ void ASushiCharacter::FinishRolling()
 	UE_LOG(LogTemp, Log, TEXT("Rolling finished. Press Interact again to take sushi."));
 }
 
+void ASushiCharacter::SetIgnoreLookInputAndMovementMode(const bool bIsIgnoreLookInput, const EMovementMode MovementModeToSet)
+{
+	if (APlayerController* PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0))
+	{
+		PlayerController->SetIgnoreLookInput(bIsIgnoreLookInput);
+		GetCharacterMovement()->SetMovementMode(MovementModeToSet);
+	}
+}
+
 void ASushiCharacter::TakeSushi()
 {
 	if (!SushiItemClass)
@@ -119,6 +147,7 @@ void ASushiCharacter::TakeSushi()
 	{
 		SushiActor->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, TEXT("Hand_R_Socket"));
 		HeldSushiName = CurrentCookware->SushiName;
+		bSushiInHand = true;
 	}
 	UserWidget->SetInfoText(FText::FromString(TEXT("Take Sushi to customer's table")));
 }
@@ -170,6 +199,12 @@ void ASushiCharacter::Interact()
 
 		if (FoundCookware)
 		{
+			if (bSushiInHand)
+			{
+				UserWidget->SetInfoText(FText::FromString(TEXT("You already have Sushi in your hands")));
+				return; 
+			}
+			
 			CurrentCookware = FoundCookware;
 			CurrentCookware->Interact(this);
 			return;
@@ -185,6 +220,11 @@ void ASushiCharacter::Interact()
 	UserWidget->SetInfoText(FText::FromString(TEXT("Nothing to interact with nearby")));
 }
 
+void ASushiCharacter::Drop()
+{
+	ClearHeldSushi();
+}
+
 void ASushiCharacter::ClearHeldSushi()
 {
 	if (SushiActor)
@@ -193,6 +233,7 @@ void ASushiCharacter::ClearHeldSushi()
 		SushiActor = nullptr;
 	}
 	HeldSushiName = "";
+	bSushiInHand = false;
 }
 
 void ASushiCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -205,6 +246,7 @@ void ASushiCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ASushiCharacter::Look);
 
 		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Started, this, &ASushiCharacter::Interact);
+		EnhancedInputComponent->BindAction(DropAction, ETriggerEvent::Started, this, &ASushiCharacter::Drop);
 	}
 }
 

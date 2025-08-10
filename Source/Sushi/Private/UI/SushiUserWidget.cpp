@@ -15,6 +15,14 @@ void USushiUserWidget::SetInfoText(const FText& NewText)
 	}
 }
 
+void USushiUserWidget::SetScoreText(int32 NewScore)
+{
+	if (ScoreText)
+	{
+		ScoreText->SetText(FText::Format(FText::FromString("Score: {0}"), FText::AsNumber(NewScore)));
+	}
+}
+
 void USushiUserWidget::ClearInfoText()
 {
 	if (InfoText)

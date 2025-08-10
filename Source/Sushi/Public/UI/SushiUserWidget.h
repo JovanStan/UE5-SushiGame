@@ -16,8 +16,14 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SetInfoText(const FText& NewText);
 
+	UFUNCTION(BlueprintCallable)
+	void SetScoreText(int32 NewScore);
+
 	UPROPERTY(meta = (BindWidget))
 	 TObjectPtr<UTextBlock> InfoText;
+	
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UTextBlock> ScoreText;
 
 private:
 	FTimerHandle ClearTextTimerHandle;
