@@ -39,8 +39,13 @@
 *.opensdf
 *.sdf
 *.VC.db
+*.opensdf
 *.VC.opendb
 .vsconfig
+.vscode
+.vs
+*.xcodeproj
+*.xcworkspace
 
 # Precompiled Assets
 SourceArt/**/*.png
