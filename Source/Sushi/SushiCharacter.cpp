@@ -61,11 +61,27 @@ void ASushiCharacter::BeginPlay()
 		if (UserWidget)
 		{
 			UserWidget->AddToViewport();
-			if (ASushiPlayerState* PS = GetPlayerState<ASushiPlayerState>())
-			{
-				UserWidget->SetScoreText(PS->PlayerScore);
-				PS->OnScoreChanged.AddDynamic(this, &ASushiCharacter::HandleScoreChanged);
-			}
+		}
+	}
+
+	if (ASushiPlayerState* PS = GetPlayerState<ASushiPlayerState>())
+	{
+		PS->OnScoreChanged.AddDynamic(this, &ASushiCharacter::HandleScoreChanged);
+		UserWidget->SetScoreText(PS->PlayerScore);
+	}
+}
+
+void ASushiCharacter::OnRep_PlayerState()
+{
+	Super::OnRep_PlayerState();
+	if (ASushiPlayerState* PS = GetPlayerState<ASushiPlayerState>())
+	{
+		PS->OnScoreChanged.RemoveDynamic(this, &ASushiCharacter::HandleScoreChanged);
+
+		PS->OnScoreChanged.AddDynamic(this, &ASushiCharacter::HandleScoreChanged);
+		if (UserWidget)
+		{
+			UserWidget->SetScoreText(PS->PlayerScore);
 		}
 	}
 }

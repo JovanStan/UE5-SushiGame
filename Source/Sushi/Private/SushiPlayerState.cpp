@@ -16,7 +16,6 @@ void ASushiPlayerState::GetLifetimeReplicatedProps(TArray<class FLifetimePropert
 
 void ASushiPlayerState::OnRep_PlayerScore()
 {
-	Super::OnRep_Score();
 	OnScoreChanged.Broadcast(PlayerScore);
 }
 
