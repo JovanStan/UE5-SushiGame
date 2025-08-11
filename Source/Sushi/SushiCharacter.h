@@ -27,7 +27,9 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UCameraComponent>FollowCamera;
 	
+	UPROPERTY()
 	bool bIsBusy = false;
+
 	UPROPERTY()
 	TObjectPtr<ASushiCookware> CurrentCookware;
 
@@ -54,6 +56,7 @@ public:
 	void Interact();
 	void Drop();
 	
+	
 	void StartCutting(ASushiCookware* Cookware);
 	void StartRolling(ASushiCookware* Cookware);
 	void TakeSushi();
@@ -62,6 +65,13 @@ public:
 	void FinishRolling();
 
 	void ClearHeldSushi();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastPlayCuttingAnimation();
+    
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastPlayRollingAnimation();
+	
 
 	UFUNCTION()
 	void HandleScoreChanged(int32 NewScore);
@@ -84,8 +94,10 @@ protected:
 	
 	UPROPERTY()
 	TObjectPtr<AActor> SushiActor;
+
 	UPROPERTY()
 	bool bSushiInHand;
+
 	UPROPERTY()
 	FName HeldSushiName;
 	

@@ -57,28 +57,49 @@ ASushiCharacter::ASushiCharacter()
 void ASushiCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	if (UserWidgetClass)
-	{
-		UserWidget = CreateWidget<USushiUserWidget>(GetWorld(), UserWidgetClass);
-		if (UserWidget)
-		{
-			UserWidget->AddToViewport();
-		}
-	}
-
-	if (ASushiPlayerState* PS = GetPlayerState<ASushiPlayerState>())
-	{
-		PS->OnScoreChanged.AddDynamic(this, &ASushiCharacter::HandleScoreChanged);
-		UserWidget->SetScoreText(PS->PlayerScore);
-	}
+	
+	 if (IsLocallyControlled())
+	 {
+            if (UserWidgetClass)
+            {
+                UserWidget = CreateWidget<USushiUserWidget>(GetWorld(), UserWidgetClass);
+                if (UserWidget)
+                {
+                    UserWidget->AddToViewport();
+                }
+            }
+    
+            if (ASushiPlayerState* PS = GetPlayerState<ASushiPlayerState>())
+            {
+                PS->OnScoreChanged.AddDynamic(this, &ASushiCharacter::HandleScoreChanged);
+                if (UserWidget)
+                {
+                    UserWidget->SetScoreText(PS->PlayerScore);
+                }
+            }
+	 }
 }
 
 void ASushiCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(ASushiCharacter, bSushiInHand);
-	DOREPLIFETIME(ASushiCharacter, HeldSushiName);
-	DOREPLIFETIME(ASushiCharacter, SushiActor);
+}
+
+
+void ASushiCharacter::MulticastPlayCuttingAnimation_Implementation()
+{
+	if (CutFishMontage)
+	{
+		PlayAnimMontage(CutFishMontage);
+	}
+}
+
+void ASushiCharacter::MulticastPlayRollingAnimation_Implementation()
+{
+	if (RollSushiMontage)
+	{
+		PlayAnimMontage(RollSushiMontage);
+	}
 }
 
 void ASushiCharacter::OnRep_PlayerState()
@@ -110,7 +131,8 @@ void ASushiCharacter::StartCutting(ASushiCookware* Cookware)
 	bIsBusy = true;
 	CurrentCookware = Cookware;
 	SetIgnoreLookInputAndMovementMode(true, MOVE_None);
-	
+
+	MulticastPlayCuttingAnimation();
 	
 	GetWorldTimerManager().SetTimer(CuttingTimerHandle, this, &ASushiCharacter::FinishCutting, CurrentCookware->CuttingTime, false);
 }
@@ -123,6 +145,7 @@ void ASushiCharacter::FinishCutting()
 	if (CurrentCookware)
 		CurrentCookware->CookwareState = ECookwareState::CuttingDone;
 	
+	
 	UserWidget->SetInfoText(FText::FromString(TEXT("Cutting Finished. You can roll sushi now")));
 }
 
@@ -132,8 +155,7 @@ void ASushiCharacter::StartRolling(ASushiCookware* Cookware)
 	CurrentCookware = Cookware;
 	SetIgnoreLookInputAndMovementMode(true, MOVE_None);
 
-	if (RollSushiMontage)
-		PlayAnimMontage(RollSushiMontage);
+	MulticastPlayRollingAnimation();
 
 	GetWorldTimerManager().SetTimer(RollingTimerHandle, this, &ASushiCharacter::FinishRolling, CurrentCookware->RollingTime, false);
 }

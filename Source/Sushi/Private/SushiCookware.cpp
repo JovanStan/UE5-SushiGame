@@ -26,8 +26,6 @@ void ASushiCookware::BeginPlay()
 void ASushiCookware::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(ASushiCookware, CookwareState);
-	DOREPLIFETIME(ASushiCookware, SushiName);
 }
 
 void ASushiCookware::Interact(ASushiCharacter* Player)
