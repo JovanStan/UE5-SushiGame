@@ -6,6 +6,7 @@
 #include "SushiPlayerState.h"
 #include "Blueprint/UserWidget.h"
 #include "Components/WidgetComponent.h"
+#include "Net/UnrealNetwork.h"
 #include "UI/OrderWidget.h"
 
 class ASushiPlayerState;
@@ -24,6 +25,8 @@ ASushiTable::ASushiTable()
 	OrderWidgetComponent->SetRelativeLocation(FVector(0.f, 0.f, 150.f)); 
 	OrderWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
 	OrderWidgetComponent->SetVisibility(false);
+	bReplicates = true;
+	AActor::SetReplicateMovement(false);
 }
 
 void ASushiTable::BeginPlay()
@@ -47,6 +50,14 @@ void ASushiTable::BeginPlay()
 	GetWorld()->GetTimerManager().SetTimer(OrderTimerHandle, this, &ASushiTable::GenerateOrder, 5.f, false);
 }
 
+void ASushiTable::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(ASushiTable, bHasActiveOrder);
+	DOREPLIFETIME(ASushiTable, OrderedSushi);
+	DOREPLIFETIME(ASushiTable, RemainingOrderTime);
+}
+
 void ASushiTable::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -55,8 +66,9 @@ void ASushiTable::Tick(float DeltaTime)
 
 void ASushiTable::GenerateOrder()
 {
-	bHasActiveOrder = true;
+	if (!HasAuthority()) return;
 	
+	bHasActiveOrder = true;
 	TArray<FName> SushiTypes = { "SushiRoll", "Nigiri", "Tempura" };
 	OrderedSushi = SushiTypes[FMath::RandRange(0, SushiTypes.Num() - 1)];
 	
@@ -92,6 +104,8 @@ void ASushiTable::UpdateOrderTimer()
 
 void ASushiTable::FailOrder()
 {
+	if (!HasAuthority()) return;
+	
 	if (bHasActiveOrder)
 	{
 		bHasActiveOrder = false;
@@ -106,13 +120,15 @@ void ASushiTable::FailOrder()
 		{
 			OrderWidgetInstance->ClearOrder();
 		}
-
+		GameOverScreen();
 		GetWorld()->GetTimerManager().ClearTimer(OrderUpdateTimerHandle);
 	}
 }
 
 bool ASushiTable::TryDeliverSushi(ASushiCharacter* Player)
 {
+	if (!HasAuthority()) return false;
+	
 	if (!bHasActiveOrder || !Player) return false;
 
 	if (Player->GetHeldSushiName() == OrderedSushi)
@@ -141,7 +157,7 @@ bool ASushiTable::TryDeliverSushi(ASushiCharacter* Player)
 
 		// Queue next order after delay
 		GetWorld()->GetTimerManager().SetTimer(OrderTimerHandle, this, &ASushiTable::GenerateOrder, 5.f, false);
-
+		
 		return true;
 	}
 	

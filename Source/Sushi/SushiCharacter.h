@@ -69,6 +69,7 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void OnRep_PlayerState() override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	
@@ -80,10 +81,14 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category="Sushi|Items")
 	TSubclassOf<AActor> SushiItemClass;
+	
 	UPROPERTY()
 	TObjectPtr<AActor> SushiActor;
+	UPROPERTY()
 	bool bSushiInHand;
+	UPROPERTY()
 	FName HeldSushiName;
+	
 	
 
 	void Move(const FInputActionValue& Value);
@@ -95,6 +100,7 @@ protected:
 	TObjectPtr<USushiUserWidget> UserWidget;
 
 public:
+	
 	UFUNCTION(BlueprintCallable, Category="Input")
 	virtual void DoMove(float Right, float Forward);
 	UFUNCTION(BlueprintCallable, Category="Input")

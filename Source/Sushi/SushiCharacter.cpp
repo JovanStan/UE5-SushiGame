@@ -14,6 +14,7 @@
 #include "Blueprint/UserWidget.h"
 #include "Engine/OverlapResult.h"
 #include "Kismet/GameplayStatics.h"
+#include "Net/UnrealNetwork.h"
 #include "UI/SushiUserWidget.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
@@ -48,6 +49,7 @@ ASushiCharacter::ASushiCharacter()
 
 	PrimaryActorTick.bCanEverTick = false;
 	bReplicates = true;
+	ACharacter::SetReplicateMovement(true);
 	HeldSushiName = "";
 	bSushiInHand = false;
 }
@@ -69,6 +71,14 @@ void ASushiCharacter::BeginPlay()
 		PS->OnScoreChanged.AddDynamic(this, &ASushiCharacter::HandleScoreChanged);
 		UserWidget->SetScoreText(PS->PlayerScore);
 	}
+}
+
+void ASushiCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(ASushiCharacter, bSushiInHand);
+	DOREPLIFETIME(ASushiCharacter, HeldSushiName);
+	DOREPLIFETIME(ASushiCharacter, SushiActor);
 }
 
 void ASushiCharacter::OnRep_PlayerState()
@@ -101,8 +111,6 @@ void ASushiCharacter::StartCutting(ASushiCookware* Cookware)
 	CurrentCookware = Cookware;
 	SetIgnoreLookInputAndMovementMode(true, MOVE_None);
 	
-	if (CutFishMontage)
-		PlayAnimMontage(CutFishMontage);
 	
 	GetWorldTimerManager().SetTimer(CuttingTimerHandle, this, &ASushiCharacter::FinishCutting, CurrentCookware->CuttingTime, false);
 }
@@ -135,11 +143,17 @@ void ASushiCharacter::FinishRolling()
 	bIsBusy = false;
 	SetIgnoreLookInputAndMovementMode(false, MOVE_Walking);
 
+	if (!HasAuthority()) return;
+
 	if (CurrentCookware)
 	{
 		CurrentCookware->CookwareState = ECookwareState::RollingDone;
+		
 		SushiActor = GetWorld()->SpawnActor<AActor>(SushiItemClass, CurrentCookware->GetSushiSpawnLocation()->GetComponentLocation(), FRotator(0, 0, 0));
+		SushiActor->SetReplicates(true);
+		SushiActor->SetReplicatingMovement(true);
 		UserWidget->SetInfoText(FText::FromString(TEXT("Take sushi Roll")));
+		
 	}
 
 	UE_LOG(LogTemp, Log, TEXT("Rolling finished. Press Interact again to take sushi."));
@@ -156,6 +170,8 @@ void ASushiCharacter::SetIgnoreLookInputAndMovementMode(const bool bIsIgnoreLook
 
 void ASushiCharacter::TakeSushi()
 {
+	if (!HasAuthority()) return;
+	
 	if (!SushiItemClass)
 		return;
 	
@@ -238,6 +254,7 @@ void ASushiCharacter::Interact()
 
 void ASushiCharacter::Drop()
 {
+	if (!HasAuthority()) return;
 	ClearHeldSushi();
 }
 
@@ -250,7 +267,9 @@ void ASushiCharacter::ClearHeldSushi()
 	}
 	HeldSushiName = "";
 	bSushiInHand = false;
+
 }
+
 
 void ASushiCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
@@ -265,6 +284,7 @@ void ASushiCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 		EnhancedInputComponent->BindAction(DropAction, ETriggerEvent::Started, this, &ASushiCharacter::Drop);
 	}
 }
+
 
 void ASushiCharacter::Move(const FInputActionValue& Value)
 {

@@ -36,6 +36,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Sushi")
 	ECookwareState CookwareState;
 
+
 	void Interact(ASushiCharacter* Player);
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Sushi")
 	FName SushiName;
@@ -44,6 +45,7 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Sushi", meta = (AllowPrivateAccess = true))

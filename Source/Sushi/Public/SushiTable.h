@@ -28,18 +28,21 @@ public:
 	TObjectPtr<UWidgetComponent> OrderWidgetComponent;
 
 	FTimerHandle OrderUpdateTimerHandle;
+	
 	float RemainingOrderTime;
 	void UpdateOrderTimer();
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UStaticMeshComponent> Mesh;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	bool bHasActiveOrder = false;
+
 	
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Replicated)
 	FName OrderedSushi;
 	
 	FTimerHandle OrderTimerHandle;
@@ -51,4 +54,6 @@ protected:
 	UFUNCTION()
 	void FailOrder();
 
+	UFUNCTION(BlueprintImplementableEvent)
+	void GameOverScreen();
 };

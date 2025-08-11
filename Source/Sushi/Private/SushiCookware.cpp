@@ -3,6 +3,7 @@
 #include "SushiCookware.h"
 
 #include "SushiCharacter.h"
+#include "Net/UnrealNetwork.h"
 
 
 ASushiCookware::ASushiCookware()
@@ -13,11 +14,20 @@ ASushiCookware::ASushiCookware()
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
 	SushiSpawnLocation = CreateDefaultSubobject<USceneComponent>(TEXT("SushiSpawnLocation"));
 	SushiSpawnLocation->SetupAttachment(Mesh);
+	bReplicates = true;
+	AActor::SetReplicateMovement(false);
 }
 
 void ASushiCookware::BeginPlay()
 {
 	Super::BeginPlay();
+}
+
+void ASushiCookware::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(ASushiCookware, CookwareState);
+	DOREPLIFETIME(ASushiCookware, SushiName);
 }
 
 void ASushiCookware::Interact(ASushiCharacter* Player)
